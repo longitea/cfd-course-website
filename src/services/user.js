@@ -1,7 +1,5 @@
 import api from "../constants/api"
 
-
-
 const userService = {
     getInfo() {
         const token = JSON.parse(localStorage.getItem('login'))

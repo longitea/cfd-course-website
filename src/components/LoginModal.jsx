@@ -5,7 +5,9 @@ import { useAuth } from '../hooks/useAuth'
 import { usePage } from '../hooks/usePage'
 import authService from '../services/auth'
 import userService from '../services/user'
+import { loginAction } from '../stores/authReducer'
 import Input from './Input'
+import { useDispatch } from 'react-redux'
 
 const ErrorMessage = styled.p`
     color: red;
@@ -32,6 +34,7 @@ const DivHint = styled.div`
 export default function LoginModal() {
 
   const { setUser } = useAuth()
+  const dispath = useDispatch()
   const { isOpenLoginModal, setIsOpenLoginModal } = usePage()
 
   const [form, setForm] = useState({
@@ -43,37 +46,51 @@ export default function LoginModal() {
 
   // lấy dữ liệu user input -> API
   const onSubmit = async (ev) => {
-    setErrorAPI('')
+    ev.preventDefault()
 
-    // Validate
+    // Validate US/PW
     const errorObj = {}
-    if(!form?.username?.trim()){
+    if (!form?.username?.trim()) {
       errorObj.username = 'Mail không được để trống'
-    } else if(!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(form.username)) {
+    } else if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(form.username)) {
       errorObj.username = 'Mail không đúng định dạng'
     }
 
-    if(!form?.password?.trim()){
+    if (!form?.password?.trim()) {
       errorObj.password = 'Password không được để trống'
     }
     setErrorInput(errorObj)
-    if(Object.keys(errorObj).length === 0){
-      // call Login API
-      try {
-        const response = await authService.login(form)
-        localStorage.setItem( 'login', JSON.stringify(response.data))
 
-        const user = await userService.getInfo()
-        setUser(user.data)
-        localStorage.setItem( 'user', JSON.stringify(user.data))
-
-        setIsOpenLoginModal(false)
-
-      } catch (error) {
-        if(error.response) {
-          setErrorAPI(error.response.data.message)
+    // call Login API
+    if (Object.keys(errorObj).length === 0) {
+      dispath(loginAction({
+        payload: form,
+        success: () => {
+            setIsOpenLoginModal(false)
+        },
+        error: (error) => {
+            if (error.message) {
+                setErrorMessage(error.message)
+            }
         }
-      }
+    }))
+      // try {
+      //   setErrorAPI('')
+
+      //   const response = await authService.login(form)
+      //   localStorage.setItem('login', JSON.stringify(response.data))
+
+      //   const user = await userService.getInfo()
+      //   setUser(user.data)
+      //   localStorage.setItem('user', JSON.stringify(user.data))
+
+      //   setIsOpenLoginModal(false)
+
+      // } catch (error) {
+      //   if (error.response) {
+      //     setErrorAPI(error.response.data.message)
+      //   }
+      // }
     }
   }
 
@@ -88,8 +105,8 @@ export default function LoginModal() {
             {
               errorAPI && <ErrorMessage>{errorAPI}</ErrorMessage>
             }
-            <Input placeholder="Email@gmail.com" error={errorInput.username} onChange={ev => form.username = ev.target.value}/>
-            <Input type="password" placeholder="Mật khẩu" onChange={ev => form.password = ev.target.value} error={errorInput.password}/>
+            <Input placeholder="Email@gmail.com" error={errorInput.username} onChange={ev => form.username = ev.target.value} />
+            <Input type="password" placeholder="Mật khẩu" onChange={ev => form.password = ev.target.value} error={errorInput.password} />
             {/* <input type="password" placeholder="Mật khẩu" onChange={ev => form.password = ev.target.value} /> */}
             <div className="remember">
               <label className="btn-remember">
@@ -101,14 +118,14 @@ export default function LoginModal() {
               <a href="#" className="forget">Quên mật khẩu?</a>
             </div>
             <button onClick={onSubmit} className="btn rect main btn-login" >đăng nhập</button>
-          <DivHint className="Hint">
+            <DivHint className="Hint">
               <h2 >Account Hint</h2>
               <p className='text'>thanhlong@gmail.com</p>
               <p className='text'>123456789</p>
-          </DivHint>
+            </DivHint>
           </div>
         </div>
-  
+
       </div>
     ),
     // param 2: DOM Element
